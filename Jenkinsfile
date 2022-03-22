@@ -1,37 +1,41 @@
 pipeline {
-  environment {
-    registry = "jebinraj/docker"
-    registryCredential = 'dockerhub'
-    dockerImage = ''
-  }
-  agent any
-  stages {
-    stage('Cloning Git') {
-      steps {
-        git 'https://github.com/antonyjebinraj/devops-cicd-demo.git'
-      }
-    }
-    stage('Building image') {
-      steps{
-        script {
-          dockerImage = docker.build registry + ":$BUILD_NUMBER"
-        }
-      }
-    }
-    stage('Deploy Image') {
-      steps{
-        script {
-          docker.withRegistry( '', registryCredential ) {
-            dockerImage.push()
+    agent any
+ stages {
+  stage('Docker Build and Tag') {
+           steps {
+              
+                sh 'docker build -t demo:latest .' 
+                sh 'docker tag demo jebinraj/demo:latest'
+                sh 'docker tag demo jebinraj/demo:$BUILD_NUMBER'
+               
           }
         }
-      }
+     
+  stage('Publish image to Docker Hub') {
+          
+            steps {
+        withDockerRegistry([ credentialsId: "docker-hub-credentials", url: "" ]) {
+          sh  'docker push jebinraj/demo:latest'
+          sh  'docker push jebinraj/demo:$BUILD_NUMBER' 
+        }
+                  
+          }
+        }
+     
+      stage('Run Docker container on Jenkins Agent') {
+             
+            steps {
+                sh "docker run -d -p 4030:80 jebinraj/demo"
+ 
+            }
+        }
+ stage('Run Docker container on remote hosts') {
+             
+            steps {
+                sh "docker -H ssh://jenkins@172.31.28.25 run -d -p 4001:80 jebinraj/demo"
+ 
+            }
+        }
     }
-    stage('Remove Unused docker image') {
-      steps{
-        sh "docker rmi $registry:$BUILD_NUMBER"
-      }
-    }
-  }
 }
   
