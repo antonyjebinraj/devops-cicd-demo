@@ -1,14 +1,14 @@
 pipeline {
   environment {
-    registry = "interviewdot/cicd-demo"
-    registryCredential = 'docker-hub-credentials'
+    registry = "jebinraj/docker"
+    registryCredential = 'dockerhub'
     dockerImage = ''
   }
   agent any
   stages {
     stage('Cloning Git') {
       steps {
-        git 'https://github.com/net-vinothkumar/devops-cicd-demo.git'
+        git 'https://github.com/antonyjebinraj/devops-cicd-demo.git'
       }
     }
     stage('Building image') {
@@ -18,24 +18,20 @@ pipeline {
         }
       }
     }
-    stage('Push Image') {
+    stage('Deploy Image') {
       steps{
         script {
-          /* Finally, we'll push the image with two tags:
-                   * First, the incremental build number from Jenkins
-                   * Second, the 'latest' tag.
-                   * Pushing multiple tags is cheap, as all the layers are reused. */
-          docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-              dockerImage.push("${env.BUILD_NUMBER}")
-              dockerImage.push("latest")
+          docker.withRegistry( '', registryCredential ) {
+            dockerImage.push()
           }
         }
       }
     }
-    stage('Deploy to K8S'){
-        steps{
-            sh 'kubectl apply -f deployment.yml'
-       }
+    stage('Remove Unused docker image') {
+      steps{
+        sh "docker rmi $registry:$BUILD_NUMBER"
+      }
     }
   }
 }
+  
