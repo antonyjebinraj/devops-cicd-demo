@@ -14,7 +14,7 @@ pipeline {
   stage('Publish image to Docker Hub') {
           
             steps {
-        withDockerRegistry([ credentialsId: "docker-hub-credentials", url: "" ]) {
+        withDockerRegistry([ credentialsId: "docker-hub-credentials", url: "https://hub.docker.com/repository/docker/jebinraj/demo" ]) {
           bat  'docker push jebinraj/demo:latest'
           bat  'docker push jebinraj/demo:$BUILD_NUMBER' 
         }
